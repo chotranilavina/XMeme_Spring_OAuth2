@@ -1,43 +1,59 @@
 package com.crio.starter.configuration;
 
-import com.crio.starter.data.*;
 import com.crio.starter.repository.*;
-import com.crio.starter.service.*;
-import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.context.annotation.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.crypto.bcrypt.*;
-import org.springframework.context.annotation.*;
-import java.util.*;
-import lombok.extern.log4j.Log4j2;
+import org.springframework.security.config.annotation.authentication.builders.*;
 
-@Log4j2
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-  @Autowired
-  private UserRepository userRepository;
 
   @Autowired
+ private UserRepository userRepository;
+
+ @Autowired
 private DataSource dataSource;
 
-@Bean
+	@Bean
 	@Override
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 	       return super.authenticationManagerBean();
 	}
 
+    @Bean
+    @Override
+    public UserDetailsService userDetailsService() {
+
+    	UserDetails user=User.builder().username("user").password(passwordEncoder().encode("secret")).
+    			roles("USER").build();
+    	UserDetails userAdmin=User.builder().username("admin").password(passwordEncoder().encode("secret")).
+    			roles("ADMIN").build();
+        return new InMemoryUserDetailsManager(user,userAdmin);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new  BCryptPasswordEncoder();
+    }
 
   @Override
   public void configure(WebSecurity web) throws Exception {
@@ -46,9 +62,30 @@ private DataSource dataSource;
 
 
   @Override
-            protected void configure(AuthenticationManagerBuilder builder) throws Exception {
-                builder.jdbcAuthentication()
-                       .passwordEncoder(new BCryptPasswordEncoder())
-                       .dataSource(dataSource);
+            protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+              auth.inMemoryAuthentication()
+       .withUser("USER").password(passwordEncoder().encode("secret")).roles("USER")
+       .and()
+       .withUser("ADMIN").password(passwordEncoder().encode("secret")).roles("ADMIN");
+                // builder.jdbcAuthentication()
+                //        .passwordEncoder(new BCryptPasswordEncoder())
+                //        .dataSource(dataSource);
             }
+
+
+  // @Override
+  //   protected void configure(HttpSecurity http) throws Exception {
+  //       http
+  //       	.csrf().disable()
+  //           .authorizeRequests()
+  //           	.antMatchers("/","/index","/webpublic","/login","/register").permitAll()
+  //           	.antMatchers("/webprivate","/memes").authenticated()
+  //           	.antMatchers("/webadmin").hasRole("ADMIN").and()
+  //               .formLogin()
+  //               .loginPage("/login")
+  //               .permitAll()
+  //               .and()
+  //               .logout()
+  //               .permitAll();
+  //   }
 }
