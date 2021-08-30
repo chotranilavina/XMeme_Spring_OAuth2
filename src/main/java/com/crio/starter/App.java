@@ -5,6 +5,9 @@
 package com.crio.starter;
 
 import lombok.extern.log4j.Log4j2;
+import com.crio.starter.configuration.*;
+
+import org.springframework.context.annotation.*;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,6 +15,9 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 
 @Log4j2
 @SpringBootApplication
+@ComponentScan(excludeFilters =
+        {@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfiguration.class)})
+
 public class App {
 
   public static void main(String[] args) {
